@@ -10,12 +10,11 @@
 
 (function() {
   var Features, ajax, apply, codeLoader, funLoader, path, provide, relative, require, runLinks,
-    __slice = [].slice,
-    __hasProp = {}.hasOwnProperty;
+    __slice = [].slice;
 
-  provide = function(name, location, exports) {
-    Features.prototype.places[name] = location;
-    return Features.prototype.loaded[name] = exports;
+  provide = function(name, location, module) {
+    Features.prototype.loaded[name] = module;
+    return Features.prototype.loaded[location] = module;
   };
 
   funLoader = function(name, location, fun, options) {
@@ -23,20 +22,21 @@
       options = {};
     }
     return function(cb) {
-      var args, exports, module, require, result;
+      var args, module, require;
+      console.log("REQ", name, location);
       options.self || (options.self = {});
       module = options.module || {};
       module.exports || (module.exports = {});
       module.location = '' + location;
       require = relative(location);
       args = [require, module, module.exports, options.self];
-      result = fun.apply(null, args);
-      exports = result || module.exports;
-      provide(name, location, exports);
+      provide(name, location, module);
+      fun.apply(null, args);
+      provide(name, location, module);
       if (cb) {
-        cb(exports);
+        cb(module.exports);
       }
-      return exports;
+      return module.exports;
     };
   };
 
@@ -151,34 +151,24 @@
     loaded: {},
     places: {},
     loader: {},
-    find: function(feature) {
-      var found, full, location, name, _name, _ref;
-      name = feature;
-      found = this.loaded[name];
-      full = feature;
-      if (this.seems_relative(full)) {
-        full = this.absolute(full);
+    find: function(name) {
+      var found, href;
+      href = name;
+      if (this.seems_relative(href)) {
+        href = this.absolute(href);
       }
-      if (!found) {
-        _ref = this.places;
-        for (_name in _ref) {
-          if (!__hasProp.call(_ref, _name)) continue;
-          location = _ref[_name];
-          if (location === feature || location === full) {
-            found = this.loaded[_name];
-            break;
-          }
-        }
-      }
+      found = this.loaded[name] || this.loaded[href] || this.loaded[this.places[name]] || this.loaded[this.places[href]];
       if (found) {
         return this.already(found);
       }
-      return this.loader[name] || codeLoader(name, full);
+      return this.loader[name] || this.loader[href] || this.loader[this.places[name]] || this.loader[this.places[href]] || codeLoader(name, href);
     },
-    already: function(exports) {
+    already: function(module) {
       return function(cb) {
-        cb(exports);
-        return exports;
+        if (cb) {
+          cb(module.exports);
+        }
+        return module.exports;
       };
     },
     seems_relative: function(location) {
@@ -273,6 +263,7 @@
         options = {};
         feature = link.getAttribute('data-provide');
         href = link.getAttribute('href');
+        console.log("DEF", feature);
         shadows = link.getAttribute('data-shadows');
         if (shadows) {
           options.shadows = shadows.split(/\s*,\s*/);

@@ -6,9 +6,9 @@
 # 2012.
 ###
 
-provide = (name, location, exports)->
-  Features.prototype.places[name] = location
-  Features.prototype.loaded[name] = exports
+provide = (name, location, module)->
+  Features.prototype.loaded[name] = module
+  Features.prototype.loaded[location] = module
 
 funLoader = (name, location, fun, options = {})-> (cb)->
   options.self ||= {}
@@ -17,11 +17,11 @@ funLoader = (name, location, fun, options = {})-> (cb)->
   module.location = ''+location
   require = relative location
   args = [require, module, module.exports, options.self]
-  result = fun.apply null, args
-  exports = result || module.exports
-  provide name, location, exports
-  cb exports if cb
-  exports
+  provide name, location, module
+  fun.apply null, args
+  provide name, location, module
+  cb module.exports if cb
+  module.exports
 
 codeLoader = (name, location, code, options = {})-> (cb)->
   code = ajax(location) unless code
@@ -104,24 +104,17 @@ Features.prototype =
 
   loader: {} # feature name -> feature loader
 
-  find: (feature)->
-    name = feature
-    found = @loaded[name]
-
-    full = feature
-    if @seems_relative full
-      full = @absolute full
-
-    unless found
-      for own _name, location of @places 
-        if location == feature || location == full
-          found = @loaded[_name]
-          break
-      
+  find: (name)->
+    href = name
+    href = @absolute(href) if @seems_relative href
+    found = @loaded[name] || @loaded[href] ||
+             @loaded[@places[name]] || @loaded[@places[href]]
     return @already found if found
-    @loader[name] || codeLoader name, full
+    @loader[name] || @loader[href] ||
+     @loader[@places[name]] || @loader[@places[href]] ||
+     codeLoader name, href
 
-  already: (exports)-> (cb)-> cb exports; exports
+  already: (module)-> (cb)-> cb module.exports if cb; module.exports
 
   seems_relative: (location)-> !location.match(/^\w+:\/\//)
 
@@ -181,7 +174,6 @@ runLinks = ->
       options = {}
       feature = link.getAttribute('data-provide')
       href = link.getAttribute('href')
-
       shadows = link.getAttribute('data-shadows')
       if shadows
         options.shadows = shadows.split(/\s*,\s*/)
