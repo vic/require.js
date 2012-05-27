@@ -1,0 +1,10 @@
+{
+ "name": "require.js",
+ "description": "A simple node like synchronous require made just for the browser",
+ "version": "0.0.1",
+ "dependencies": {
+   "coffee-script": "*",
+   "uglify-js": "*",
+   "jake": "*"
+ }
+}
