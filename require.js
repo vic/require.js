@@ -23,7 +23,6 @@
     }
     return function(cb) {
       var args, module, require;
-      console.log("REQ", name, location);
       options.self || (options.self = {});
       module = options.module || {};
       module.exports || (module.exports = {});
@@ -189,6 +188,8 @@
       loader = typeof fun === 'function' ? funLoader : codeLoader;
       getter = loader(feature, location, fun, options);
       this.loader[feature] = getter;
+      delete this.loaded[feature];
+      delete this.loaded[location];
       return feature;
     },
     require: function(feature, cb) {
@@ -263,7 +264,6 @@
         options = {};
         feature = link.getAttribute('data-provide');
         href = link.getAttribute('href');
-        console.log("DEF", feature);
         shadows = link.getAttribute('data-shadows');
         if (shadows) {
           options.shadows = shadows.split(/\s*,\s*/);

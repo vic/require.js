@@ -128,6 +128,8 @@ Features.prototype =
     loader = if typeof(fun) == 'function' then funLoader else codeLoader
     getter = loader feature, location, fun, options
     @loader[feature] = getter
+    delete @loaded[feature]
+    delete @loaded[location]
     feature
 
   require: (feature, cb)-> @find(feature)(cb)
