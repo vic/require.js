@@ -178,7 +178,6 @@ require = relative(if location.pathname
   , location.origin)
 
 @require = require
-@require.codes = {}
 
 runLinks = ->
   links = document.getElementsByTagName 'link'
