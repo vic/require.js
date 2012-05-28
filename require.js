@@ -9,8 +9,33 @@
 
 
 (function() {
-  var Features, ajax, apply, codeLoader, funLoader, path, provide, relative, require, runLinks,
+  var Features, addPreload, ajax, apply, codeLoader, funLoader, path, provide, relative, require, runLinks,
     __slice = [].slice;
+
+  addPreload = function(name, location) {
+    var found, heads, l, link, links;
+    links = document.getElementsByTagName('link');
+    found = (function() {
+      var _i, _len, _results;
+      _results = [];
+      for (_i = 0, _len = links.length; _i < _len; _i++) {
+        l = links[_i];
+        if (l.href === location) {
+          _results.push(l);
+        }
+      }
+      return _results;
+    })();
+    if (found.length > 0) {
+      return;
+    }
+    link = document.createElement('link');
+    link.href = location;
+    link.rel = 'prefetch';
+    link.setAttribute('data-provide', name);
+    heads = document.getElementsByTagName('head');
+    return heads[0].appendChild(link);
+  };
 
   provide = function(name, location, module) {
     Features.prototype.loaded[name] = module;
@@ -177,15 +202,19 @@
       return this.origin + path.resolve(this.base, location);
     },
     define: function(feature, location, fun, options) {
-      var getter, loader;
+      var funGiven, getter, loader;
       if (!location) {
         location = this.absolute('');
       }
       if (this.seems_relative(location)) {
         location = this.absolute(location);
       }
+      funGiven = typeof fun === 'function';
+      if (!funGiven) {
+        addPreload(feature, location);
+      }
       this.places[feature] = location;
-      loader = typeof fun === 'function' ? funLoader : codeLoader;
+      loader = funGiven ? funLoader : codeLoader;
       getter = loader(feature, location, fun, options);
       this.loader[feature] = getter;
       delete this.loaded[feature];
@@ -242,7 +271,7 @@
   this.require.codes = {};
 
   runLinks = function() {
-    var execute, index, l, length, links, provides;
+    var execute, index, l, links, provides;
     links = document.getElementsByTagName('link');
     provides = (function() {
       var _i, _len, _results;
@@ -256,7 +285,6 @@
       return _results;
     })();
     index = 0;
-    length = provides.length;
     (execute = function() {
       var feature, href, link, options, postCode, preCode, shadows;
       link = provides[index++];
@@ -277,7 +305,7 @@
           options.postCode = postCode;
         }
         require.def(feature, href, null, options);
-        if (l.rel && l.rel.toLowerCase().match(/require|load|fetch|require\.js/)) {
+        if (link.rel && link.rel.toLowerCase().match(/^(require|load|fetch|require\.js)$/)) {
           require(feature);
         }
         return execute();

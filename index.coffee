@@ -6,6 +6,18 @@
 # 2012.
 ###
 
+addPreload = (name, location)->
+  links = document.getElementsByTagName 'link'
+  found = (l for l in links when l.href == location)
+  return if found.length > 0
+  link = document.createElement 'link'
+  link.href = location
+  link.rel = 'prefetch'
+  link.setAttribute('data-provide', name)
+  heads = document.getElementsByTagName 'head'
+  heads[0].appendChild link
+  
+
 provide = (name, location, module)->
   Features.prototype.loaded[name] = module
   Features.prototype.loaded[location] = module
@@ -124,8 +136,11 @@ Features.prototype =
     location = @absolute('') unless location
     if @seems_relative location
       location = @absolute location
+    funGiven = typeof(fun) == 'function'
+    unless funGiven
+      addPreload feature, location  
     @places[feature] = location
-    loader = if typeof(fun) == 'function' then funLoader else codeLoader
+    loader = if funGiven then funLoader else codeLoader
     getter = loader feature, location, fun, options
     @loader[feature] = getter
     delete @loaded[feature]
@@ -169,7 +184,6 @@ runLinks = ->
   links = document.getElementsByTagName 'link'
   provides = (l for l in links when l.getAttribute('data-provide'))
   index = 0
-  length = provides.length
   do execute = ->
     link = provides[index++]
     if link
@@ -185,7 +199,9 @@ runLinks = ->
       options.postCode = postCode if postCode
 
       require.def feature, href, null, options
-      require(feature) if l.rel and l.rel.toLowerCase().match(/require|load|fetch|require\.js/)
+      if link.rel && link.rel.
+         toLowerCase().match(/^(require|load|fetch|require\.js)$/)
+        require(feature)
       execute()
   null
 
