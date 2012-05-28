@@ -9,24 +9,31 @@
 
 
 (function() {
-  var Features, addPreload, ajax, apply, codeLoader, funLoader, path, provide, relative, require, runLinks,
+  var Features, ajax, apply, codeLoader, defPlace, funLoader, getPlace, path, provide, relative, require, runLinks,
     __slice = [].slice;
 
-  addPreload = function(name, location) {
-    var found, heads, l, link, links;
+  getPlace = function(name) {
+    var found, l, links;
     links = document.getElementsByTagName('link');
     found = (function() {
       var _i, _len, _results;
       _results = [];
       for (_i = 0, _len = links.length; _i < _len; _i++) {
         l = links[_i];
-        if (l.href === location) {
+        if (l.getAttribute('data-provide') === name) {
           _results.push(l);
         }
       }
       return _results;
     })();
     if (found.length > 0) {
+      return found[0].href;
+    }
+  };
+
+  defPlace = function(name, location) {
+    var heads, link;
+    if (getPlace(name)) {
       return;
     }
     link = document.createElement('link');
@@ -173,19 +180,19 @@
 
   Features.prototype = {
     loaded: {},
-    places: {},
     loader: {},
     find: function(name) {
-      var found, href;
+      var found, href, place;
       href = name;
       if (this.seems_relative(href)) {
         href = this.absolute(href);
       }
-      found = this.loaded[name] || this.loaded[href] || this.loaded[this.places[name]] || this.loaded[this.places[href]];
+      place = getPlace(name) || getPlace(href);
+      found = this.loaded[name] || this.loaded[href] || this.loaded[place];
       if (found) {
         return this.already(found);
       }
-      return this.loader[name] || this.loader[href] || this.loader[this.places[name]] || this.loader[this.places[href]] || codeLoader(name, href);
+      return this.loader[name] || this.loader[href] || this.loader[place] || codeLoader(name, place || href);
     },
     already: function(module) {
       return function(cb) {
@@ -210,10 +217,7 @@
         location = this.absolute(location);
       }
       funGiven = typeof fun === 'function';
-      if (!funGiven) {
-        addPreload(feature, location);
-      }
-      this.places[feature] = location;
+      defPlace(feature, location);
       loader = funGiven ? funLoader : codeLoader;
       getter = loader(feature, location, fun, options);
       this.loader[feature] = getter;
@@ -267,8 +271,6 @@
   require = relative(location.pathname ? path.dirname(location.pathname) : '/', location.origin);
 
   this.require = require;
-
-  this.require.codes = {};
 
   runLinks = function() {
     var execute, index, l, links, provides;

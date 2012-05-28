@@ -6,17 +6,19 @@
 # 2012.
 ###
 
-addPreload = (name, location)->
+getPlace = (name)->
   links = document.getElementsByTagName 'link'
-  found = (l for l in links when l.href == location)
-  return if found.length > 0
+  found = (l for l in links when l.getAttribute('data-provide') == name)
+  found[0].href if found.length > 0
+  
+defPlace = (name, location)->
+  return if getPlace name
   link = document.createElement 'link'
   link.href = location
   link.rel = 'prefetch'
   link.setAttribute('data-provide', name)
   heads = document.getElementsByTagName 'head'
   heads[0].appendChild link
-  
 
 provide = (name, location, module)->
   Features.prototype.loaded[name] = module
@@ -111,20 +113,18 @@ Features = (location, origin)->
 
 Features.prototype = 
 
-  loaded: {} # feature name -> feature object
-  places: {} # feature name -> feature location
+  loaded: {} # feature name -> module object
 
   loader: {} # feature name -> feature loader
 
   find: (name)->
     href = name
     href = @absolute(href) if @seems_relative href
-    found = @loaded[name] || @loaded[href] ||
-             @loaded[@places[name]] || @loaded[@places[href]]
+    place = getPlace(name) || getPlace(href)
+    found = @loaded[name] || @loaded[href] || @loaded[place]
     return @already found if found
-    @loader[name] || @loader[href] ||
-     @loader[@places[name]] || @loader[@places[href]] ||
-     codeLoader name, href
+    @loader[name] || @loader[href] || @loader[place] ||
+     codeLoader name, (place || href)
 
   already: (module)-> (cb)-> cb module.exports if cb; module.exports
 
@@ -137,9 +137,7 @@ Features.prototype =
     if @seems_relative location
       location = @absolute location
     funGiven = typeof(fun) == 'function'
-    unless funGiven
-      addPreload feature, location  
-    @places[feature] = location
+    defPlace feature, location
     loader = if funGiven then funLoader else codeLoader
     getter = loader feature, location, fun, options
     @loader[feature] = getter
