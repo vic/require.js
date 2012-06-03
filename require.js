@@ -166,15 +166,18 @@
     }
   };
 
-  Features = function(location, origin) {
+  Features = function(location, origin, name) {
     var m;
     if (origin) {
       this.origin = origin;
-      return this.base = location;
+      this.base = location;
     } else {
       m = location.match(/^(\w+:\/\/[^/]+)(.*)$/);
       this.origin = m[1];
-      return this.base = path.dirname(m[2]);
+      this.base = path.dirname(m[2]);
+    }
+    if (name) {
+      return this.name = name;
     }
   };
 
@@ -187,12 +190,12 @@
       if (this.seems_relative(href)) {
         href = this.absolute(href);
       }
-      place = getPlace(name) || getPlace(href);
+      place = (this.name ? getPlace(this.name + "/" + name) : void 0) || getPlace(name) || getPlace(href);
       found = this.loaded[name] || this.loaded[href] || this.loaded[place];
       if (found) {
         return this.already(found);
       }
-      return this.loader[name] || this.loader[href] || this.loader[place] || codeLoader(name, place || href);
+      return (this.name ? this.loader[this.name + "/" + name] : void 0) || this.loader[name] || this.loader[href] || this.loader[place] || codeLoader(name, place || href);
     },
     already: function(module) {
       return function(cb) {
@@ -259,9 +262,9 @@
     };
   };
 
-  relative = function(location, origin) {
+  relative = function(location, origin, name) {
     var features, require;
-    features = new Features(location, origin);
+    features = new Features(location, origin, name);
     require = apply(features.require, features);
     require.def = apply(features.define, features);
     require.all = apply(features.requireAll, features);

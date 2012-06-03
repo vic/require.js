@@ -102,7 +102,7 @@ path =
 
   resolve: (parts ...)-> @normalize parts.join @separator
 
-Features = (location, origin)->
+Features = (location, origin, name)->
   if origin
     @origin = origin
     @base = location
@@ -110,6 +110,7 @@ Features = (location, origin)->
     m = location.match(/^(\w+:\/\/[^/]+)(.*)$/)
     @origin = m[1]
     @base = path.dirname(m[2])
+  @name = name if name
 
 Features.prototype = 
 
@@ -120,10 +121,12 @@ Features.prototype =
   find: (name)->
     href = name
     href = @absolute(href) if @seems_relative href
-    place = getPlace(name) || getPlace(href)
+    place = (getPlace(@name+"/"+name) if @name) ||
+            getPlace(name) || getPlace(href)
     found = @loaded[name] || @loaded[href] || @loaded[place]
     return @already found if found
-    @loader[name] || @loader[href] || @loader[place] ||
+    (@loader[@name+"/"+name] if @name) ||
+     @loader[name] || @loader[href] || @loader[place] ||
      codeLoader name, (place || href)
 
   already: (module)-> (cb)-> cb module.exports if cb; module.exports
@@ -162,8 +165,8 @@ Features.prototype =
 
 apply = (fun, self) -> (args...)-> fun.apply self, args
 
-relative = (location, origin)->
-  features = new Features location, origin
+relative = (location, origin, name)->
+  features = new Features location, origin, name
   require = apply features.require, features
   require.def = apply features.define, features
   require.all = apply features.requireAll, features
