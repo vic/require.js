@@ -187,7 +187,7 @@ runLinks = ->
     link = provides[index++]
     if link
       options = {}
-      features = link.getAttribute('data-provide').split(/\s*,\s*/)
+      feature = link.getAttribute('data-provide')
       href = link.getAttribute('href')
       shadows = link.getAttribute('data-shadows')
       if shadows
@@ -196,11 +196,10 @@ runLinks = ->
       options.preCode = preCode if preCode
       postCode = link.getAttribute('data-postcode')
       options.postCode = postCode if postCode
-
-      require.def(feature, href, null, options) for feature in features
+      require.def(feature, href, null, options)
       if link.rel && link.rel.
          toLowerCase().match(/^(require|load|fetch|require\.js)$/)
-        require(features[0])
+        require(feature)
       execute()
   null
 

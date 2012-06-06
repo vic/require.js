@@ -290,11 +290,11 @@
     })();
     index = 0;
     (execute = function() {
-      var feature, features, href, link, options, postCode, preCode, shadows, _i, _len;
+      var feature, href, link, options, postCode, preCode, shadows;
       link = provides[index++];
       if (link) {
         options = {};
-        features = link.getAttribute('data-provide').split(/\s*,\s*/);
+        feature = link.getAttribute('data-provide');
         href = link.getAttribute('href');
         shadows = link.getAttribute('data-shadows');
         if (shadows) {
@@ -308,12 +308,9 @@
         if (postCode) {
           options.postCode = postCode;
         }
-        for (_i = 0, _len = features.length; _i < _len; _i++) {
-          feature = features[_i];
-          require.def(feature, href, null, options);
-        }
+        require.def(feature, href, null, options);
         if (link.rel && link.rel.toLowerCase().match(/^(require|load|fetch|require\.js)$/)) {
-          require(features[0]);
+          require(feature);
         }
         return execute();
       }
