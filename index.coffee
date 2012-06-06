@@ -106,8 +106,7 @@ Features = (location, origin, name)->
   if origin
     @origin = origin
     @base = location
-  else
-    m = location.match(/^(\w+:\/\/[^/]+)(.*)$/)
+  else if m = location.match(/^(\w+:\/\/[^/]+)(.*)$/)
     @origin = m[1]
     @base = path.dirname(m[2])
   @name = name if name

@@ -171,8 +171,7 @@
     if (origin) {
       this.origin = origin;
       this.base = location;
-    } else {
-      m = location.match(/^(\w+:\/\/[^/]+)(.*)$/);
+    } else if (m = location.match(/^(\w+:\/\/[^/]+)(.*)$/)) {
       this.origin = m[1];
       this.base = path.dirname(m[2]);
     }
